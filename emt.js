@@ -21,13 +21,9 @@ $(function () {
 var consultas = {};
 
 function nuevaConsulta(favid) {
-    if (favid) {
-        new consulta().init(favid);
-    } else {
-        var aux = new consulta();
-        var id = aux.init(favid);
-        consultas[id] = aux;
-    }
+    var aux = new consulta();
+    var id = aux.init(favid);
+    consultas[id] = aux;
 }
 
 function mostrarFavs() {
@@ -49,7 +45,8 @@ function getPrintFavs() {
     var htmlcode3 =     '</a>' +
                     '</li>'
     for (f in favoritos) {
-        $('#favs').append(htmlcode1 + f.id + htmlcode2 + f.numLinea + f.parada + htmlcode3);
+        if (favoritos[f] != null)
+            $('#favs').append(htmlcode1 + favoritos[f].favId + htmlcode2 + 'LÍNEA ' + favoritos[f].numLinea + ', SENTIDO: ' + favoritos[f].sentName[favoritos[f].sentido] + ', PARADA ' + favoritos[f].paradaName + htmlcode3 + '<br /><br />');
     }
 }
 
@@ -80,7 +77,7 @@ function sacaTiempos (letrero) {
     } else {
         $.get("http://www.emtmadrid.es/Servicios/lineas.aspx?mapaFiltro=211"); // Te odio, EMT
         bus1 = 'error';
-        bus2 = 'Algo desconocido ha sucedido. Reporta este error si quieres ayudar ;)<br />Recuerda indicar cómo reproducir el fallo';
+        bus2 = 'Algo desconocido ha sucedido. <a href="ayuda.html" target="blank">Ayudame</a> a arreglar el error';
     }
     return { bus1: bus1, bus2: bus2 };
 }
@@ -103,6 +100,7 @@ function consulta () {
     // PARADA
     this.boolParada = false;
     this.cacheParadas = false;
+    this.paradaName = {};
     this.parada = 0;
     // AUTOREF
     this.actualizar = false;
@@ -117,7 +115,7 @@ function consulta () {
     
     // Probablemente el método más importante de toda la extensión
     this.init = function (favid) {
-        if (favid) console.log('Creado objeto favorito'); else console.log('Creado objeto nuevo');
+        if (favid + 1) console.log('Creado objeto favorito'); else console.log('Creado objeto nuevo');
         this.id = maxid++;
         var htmlcode =  '<li id="consulta' + this.id + '">' +
                             '<table class="objConsulta">' + 
@@ -185,17 +183,29 @@ function consulta () {
                             '</table>' +
                         '</li>';
         $('#consultas').append(htmlcode);
-        if (favid) {
+        if (favid + 1) {
             // Guardo la info del favorito
             this.linea = favoritos[favid].linea;
+            this.boolLinea = true;
             this.numLinea = favoritos[favid].numLinea;
             this.sentido = favoritos[favid].sentido;
+            this.boolSentido = true;
             this.sentName = favoritos[favid].sentName;
             this.parada = favoritos[favid].parada;
+            this.paradaName = favoritos[favid].paradaName;
+            this.boolParada = true;
+            this.favorito = true;
+            this.favId = favid;
+           
+            // Cambio el icono
+            var tag = '#favIcon' + this.id;
+            $(tag).attr('src', 'favOn.png');
             
-            // Oculto lo poco visible que hay en un inicio
-            var tag = '#lineaMenu' + this.id;
-            $(tag).css('display', 'none');
+            // Pongo una cabecera bonita
+            var tag = '#cabLinea' + this.id;
+            $(tag).click(function () { return false; });
+            $(tag).attr('onclick', '');
+            $(tag).html('LÍNEA: ' + this.linea + "<br />" + "SENTIDO: " + this.sentName[this.sentido] + "<br />" + "PARADA: " + this.paradaName);
             
             // Cargo el tiempo, sin florituras
             this.loadTiempos();
@@ -394,10 +404,11 @@ function consulta () {
         // Registrar selección
         this.boolParada = true;
         this.parada = $parada.val();
-        
+        this.paradaName = $parada.html();        
+
         // Cambiar el nombre de la cabecera colapsable parada
         var tag = '#cabParada' + this.id;
-        $(tag).html('PARADA: ' + $parada.html());
+        $(tag).html('PARADA: ' + this.paradaName);
         
         this.loadTiempos();
     }
@@ -424,17 +435,27 @@ function consulta () {
             }
         );
     }
-    this.eventFav = function () { // TODO
-        if (this.favoritos) { // Era favorito, lo cierro
-            favoritos.removeItem(this.favId);
+    this.eventFav = function () {
+        if (this.favorito) { // Era favorito, lo cierro
+            // Elimino el favorito
+            favoritos[this.favId] = null;
             this.favorito = false;
+
+            // Cambio el icono
+            var tag = '#favIcon' + this.id;
+            $(tag).attr('src', 'favOff.png');
         } else { // No era favorito, lo hago
             this.favId = favsmaxid++;
             this.cacheSentido = false;
             this.cacheParadas = false;
+
+            // Guardo el favorito
             favoritos[this.favId] = this;
-            alert(favoritos[this.favId].cacheSentido);
             this.favorito = true;
+
+            // Cambio el icono
+            var tag = '#favIcon' + this.id;
+            $(tag).attr('src', 'favOn.png');           
         }
         localStorage['favoritos'] = favoritos;
         localStorage['favsmaxid'] = favsmaxid;
@@ -540,16 +561,17 @@ function consulta () {
             $(tag).css('display', 'none');
             
             // Alerto
-            alert('El autobús ' + this.numLinea + ' llega a la parada ' + this.parada + ' en ' + this.alarma + ' minutos');
+            // alert('El autobús ' + this.numLinea + ' llega a la parada ' + this.parada + ' en ' + this.alarma + ' minutos');
             
             // Notifico
-            /*var notification = webkitNotifications.createNotification(
+            var notification = webkitNotifications.createNotification(
               'sample-48.jpg', 
               '¡Llega el bus!', 
-              'El ' + this.numLinea + ' llega a la parada ' + this.parada + ' en ' + this.alarma + ' minutos' 
+              'El autobús ' + this.numLinea + ' llega a la parada ' + this.paradaName + ' en ' + this.alarma + ' minutos' 
             );
+            notification.show();
+            document.getElementById('sonido').play();
 
-            notification.show();*/
         }
     }
     this.refOn = function () {
@@ -562,7 +584,7 @@ function consulta () {
                 // Cargar tiempo
                 $.get("http://www.emtmadrid.es/aplicaciones/Espera.aspx?parada=" + ref.parada + "&linea=" + ref.numLinea, function(data){
                         var tiempos = sacaTiempos($(data).find("#Label3").html());
-                        $(tag).html('<td><ul><li><h6>' + tiempos.bus1 + ' minutos</h6></li><br /><li><h6>' + tiempos.bus2 + ' minutos</h6></li><br /></ul></td>');
+                        $(tag).html('<td><ul><li><h6>Primero en ' + tiempos.bus1 + ' minutos</h6></li><br /><li><h6>Siguiente en ' + tiempos.bus2 + ' minutos</h6></li><br /></ul></td>');
                         if (ref.alarmOn) ref.checkAlarma(tiempos.bus1, tiempos.bus2);
                     }
                 );
@@ -573,6 +595,9 @@ function consulta () {
     this.eventClose = function () {
         var tag = '#consulta' + this.id;
         $(tag).remove();
+        if (this.actualizar) {
+            clearInterval(this.intervalo);
+        }
         delete consultas[this.id];
     }
     this.printLineas = function () {
