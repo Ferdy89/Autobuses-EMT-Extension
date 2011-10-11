@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+    <head>
+        <title>Autobuses EMT</title>
+        <link href="emt.css" rel="stylesheet" type="text/css">
+        <script type="text/javascript" src="jquery-1.5.1.min.js"></script>
+        <script type="text/javascript" src="emt.js"></script>
+    </head>
+    <body>
+        <div>
+            <table><tr>
+                <td><a href="http://www.emtmadrid.es" target="_blank"><img src="logo.png" class="logo" /></a></td>
+                <td>
+                    <h3>TIEMPOS DE ESPERA DE LA EMT</h3>
+                    <embed id="sonido" src="bus.wav" hidden="true" autostart="false" loop="false" />
+                </td>
+                <td>
+                    <h6 align="right">por <a href="http://twitter.com/Ferdy89" target="_blank">@Ferdy89</a><br />
+                    para <a href="http://bloqmayus.com" target="_blank">BloqMayus</a></p>
+                </td>
+            </tr></table>
+        </div>
+        <div>
+            <table>
+                <tr>
+                    <td class="nueva" onclick="nuevaConsulta();" <!-- rowspan="2" -->+ NUEVA CONSULTA</td>
+                    <td class="colapsable" onclick="mostrarFavs();" id="favsMenu">MOSTRAR FAVORITOS</td>
+                </tr>
+                <tr id="favoritos" style="display: none;">
+                    <td>
+                        <ul id="favs">
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <hr />
+        <div>
+            <ul id="consultas" class="consulta">
+            </ul>
+        </div>
+    </body>
+</html>
